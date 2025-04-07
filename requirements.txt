@@ -1,3 +1,4 @@
 pandas
+undetected-chromedriver
 selenium
 webdriver-manager
