@@ -1,32 +1,31 @@
-name: Run Webscraping Pokémon
+name: Run Webscraper
 
 on:
-  workflow_dispatch:  # permite rodar manualmente
-  schedule:
-    - cron: '0 12 * * *'  # roda todos os dias às 12h UTC
+  workflow_dispatch:
 
 jobs:
-  scrap:
+  webscraping:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-      - name: Install dependencies
-        run: |
-          pip install pandas selenium webdriver-manager
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
 
-      - name: Run scraping script
-        run: python webscrap_liga_pokemon.py
+    - name: Run webscraping script
+      run: python webscrap_liga_pokemon.py
 
-      - name: Upload CSV to Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: colecoes_csv
-          path: raw/
+    - name: Upload CSV to artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: colecoes-csv
+        path: raw/
