@@ -1,21 +1,23 @@
 import pandas as pd
-import undetected_chromedriver as uc
+from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
 import time
 import os
 
-# Iniciar o Chrome com undetected_chromedriver
-options = uc.ChromeOptions()
-options.headless = True  # Headless mais seguro para bypass
+# Iniciar o navegador Chrome com opções para CI
+options = webdriver.ChromeOptions()
+options.add_argument("--headless=new")  # headless compatível com layout moderno
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--window-size=1920,1080")
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36")
 
-driver = uc.Chrome(options=options)
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 # URL pública do Google Sheets em formato CSV
 spreadsheet_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPXtRVhFqD8ADjOKjI3h-d81gmK0UdVTYfIKqe05N_QxvLxCiaEaua3bdv_oYX4c7fM606qG9dSHlz/pub?gid=464076543&single=true&output=csv'
