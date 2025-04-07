@@ -1,43 +1,32 @@
-name: Run Webscraper Liga Pokémon
+name: Run Webscraping Pokémon
 
 on:
   workflow_dispatch:  # permite rodar manualmente
-  push:               # roda em qualquer push no main
-    branches:
-      - main
+  schedule:
+    - cron: '0 12 * * *'  # roda todos os dias às 12h UTC
 
 jobs:
-  run-scraper:
+  scrap:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do código
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Instalar Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Instalar dependências
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install pandas selenium webdriver-manager
 
-      - name: Instalar Google Chrome
-        run: |
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+      - name: Run scraping script
+        run: python webscrap_liga_pokemon.py
 
-      - name: Instalar ChromeDriver
-        run: |
-          sudo apt-get install -y unzip
-          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
-          wget -N https://chromedriver.storage.googleapis.com/$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-          chromedriver --version
-
-      - name: Rodar o script Python
-        run: |
-          python webscrap_liga_pokemon.py
+      - name: Upload CSV to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: colecoes_csv
+          path: raw/
