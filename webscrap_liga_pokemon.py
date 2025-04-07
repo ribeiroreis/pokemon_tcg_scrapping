@@ -1,88 +1,57 @@
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
-import time
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 from datetime import datetime
+import time
 import os
 
-# Função para medir o tempo de execução
-start_time = time.time()
+# Iniciar o navegador Chrome com webdriver-manager
+options = webdriver.ChromeOptions()
+options.add_argument("--headless")  # importante para rodar no GitHub Actions
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-# Função para extrair dados da tabela após a interação
-def get_table_data(driver, table_xpath):
-    try:
-        table = driver.find_element(By.XPATH, table_xpath)
-        rows = table.find_elements(By.TAG_NAME, "tr")
-        data = []
-        for row in rows:
-            cols = row.find_elements(By.TAG_NAME, "td")
-            cols = [col.text for col in cols]
-            data.append(cols)
-        return data
-    except NoSuchElementException:
-        print("⚠️ Tabela não encontrada.")
-        return []
-
-# Iniciar o navegador Chrome (modo visível)
-driver = webdriver.Chrome()
-
-# Carregar dados da planilha
+# URL pública do Google Sheets em formato CSV
 spreadsheet_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPXtRVhFqD8ADjOKjI3h-d81gmK0UdVTYfIKqe05N_QxvLxCiaEaua3bdv_oYX4c7fM606qG9dSHlz/pub?gid=464076543&single=true&output=csv'
+
+# Carregar a planilha com cabeçalhos
 sheet_data = pd.read_csv(spreadsheet_url)
-
-# Colunas: coleção e URLs
-colecoes = sheet_data.iloc[:, 0].tolist()
 urls = sheet_data['url'].tolist()
+colecoes = sheet_data.iloc[:, 0].tolist()
 
-# Lista para armazenar os dados extraídos
+# Função para extrair dados da tabela
+def get_table_data(driver, table_xpath):
+    table = driver.find_element(By.XPATH, table_xpath)
+    rows = table.find_elements(By.TAG_NAME, "tr")
+    return [[col.text for col in row.find_elements(By.TAG_NAME, "td")] for row in rows]
+
 data = []
 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-# Loop principal
 for colecao, url in zip(colecoes, urls):
-    print(f"Acessando coleção: {colecao} - {url}")
     driver.get(url)
-
-    # Clicar no botão para abrir a tabela
+    time.sleep(2)
     try:
         button_xpath = '//*[@id="card-estoque"]/div[1]/div[2]/div/div[3]/div[1]/img'
         driver.find_element(By.XPATH, button_xpath).click()
-    except (NoSuchElementException, TimeoutException):
-        print("⚠️ Botão não encontrado.")
-        continue
+        time.sleep(3)
+        table_xpath = '//*[@id="card-estoque"]/div[3]/div'
+        table_data = get_table_data(driver, table_xpath)
+        for row in table_data:
+            data.append({'colecao': colecao, 'dados_tabela': row, 'extraction_time': current_time})
+    except Exception as e:
+        print(f"Erro ao processar {colecao}: {e}")
 
-    # Espera para garantir que a tabela carregue
-    time.sleep(5)
-
-    # Extrair dados da tabela
-    table_xpath = '//*[@id="card-estoque"]/div[3]/div'
-    table_data = get_table_data(driver, table_xpath)
-
-    # Adicionar dados ao dataset
-    for row in table_data:
-        data.append({'colecao': colecao, 'dados_tabela': row, 'extraction_time': current_time})
-
-# Fechar o navegador
 driver.quit()
 
-# Criar DataFrame final
 df = pd.DataFrame(data)
+print(df)
 
-# Nome do arquivo com timestamp
+# Exportar para pasta raw do repositório
+os.makedirs('raw', exist_ok=True)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-filename = f"colecoes_{timestamp}.csv"
-
-# Diretório de saída: pasta 'raw' no projeto (relativo ao script)
-output_dir = os.path.join(os.getcwd(), "raw")
-os.makedirs(output_dir, exist_ok=True)  # cria a pasta se não existir
-
-output_path = os.path.join(output_dir, filename)
-
-# Salvar como CSV
+output_path = f'raw/colecoes_{timestamp}.csv'
 df.to_csv(output_path, index=False)
-print(f"✅ Arquivo salvo em: {output_path}")
-
-# Mostrar tempo de execução
-execution_time = time.time() - start_time
-print(f"⏱️ Tempo de execução: {execution_time:.2f} segundos")
