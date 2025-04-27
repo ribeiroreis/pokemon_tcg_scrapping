@@ -19,19 +19,19 @@ options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-# URL pública do Google Sheets em formato CSV
-spreadsheet_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSPXtRVhFqD8ADjOKjI3h-d81gmK0UdVTYfIKqe05N_QxvLxCiaEaua3bdv_oYX4c7fM606qG9dSHlz/pub?gid=464076543&single=true&output=csv'
-
 # Acesse a página
 url = "https://www.pichau.com.br/placa-de-video-gigabyte-radeon-rx-7600-xt-gaming-oc-16gb-gddr6-128-bit-gv-r76xtgaming-oc-16gd?gad_source=1&gclid=CjwKCAjwq7fABhB2EiwAwk-YbHKPu2eP6MOxnn_AytWtx8r9Rt6YmYykZ3CJqHlnV4PF9xeKjW19qRoCrHsQAvD_BwE"
 driver.get(url)
 
-# Espera a página carregar (ajuste o tempo se necessário)
-time.sleep(5)
-
-# Tenta encontrar o preço utilizando o XPath
+# Espera explícita para garantir que o elemento esteja visível
 try:
-    price_element = driver.find_element(By.XPATH, "/html/body/div[2]/div/div[2]/div[4]/div[1]/div/div[1]/div[2]/div[2]")
+    # Aguardar até o preço aparecer (ajuste o XPath conforme necessário)
+    price_xpath = "//span[@class='price-value']"  # Ajuste do XPath baseado na classe do preço
+    WebDriverWait(driver, 20).until(
+        EC.visibility_of_element_located((By.XPATH, price_xpath))
+    )
+    
+    price_element = driver.find_element(By.XPATH, price_xpath)
     price = price_element.text
     print(f"Preço encontrado: {price}")
 except Exception as e:
