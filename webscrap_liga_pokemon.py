@@ -26,7 +26,7 @@ driver.get(url)
 # Espera explícita para garantir que o elemento esteja visível
 try:
     # Aguardar até o preço aparecer (ajuste o XPath conforme necessário)
-    price_xpath = "//span[@class='price-value']"  # Ajuste do XPath baseado na classe do preço
+    price_xpath = "/html/body/div[2]/div/div[2]/div[4]/div[1]/div/div[1]/div[2]/div[2]"  # Ajuste do XPath baseado na classe do preço
     WebDriverWait(driver, 20).until(
         EC.visibility_of_element_located((By.XPATH, price_xpath))
     )
